@@ -21,7 +21,7 @@ class _ProductScreenState extends State<ProductScreen> {
    // String productId = Uuid().v1();
 
     try{
-      await FirebaseFirestore.instance.collection("Product").add({
+      await FirebaseFirestore.instance.collection("addProduct").add({
 
      // await FirebaseFirestore.instance.collection("Product").doc(productId).set({
        // "productID" : productId,
@@ -39,7 +39,37 @@ class _ProductScreenState extends State<ProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text("product ccreen"),),
+      body: StreamBuilder(
+          stream: FirebaseFirestore.instance.collection("addProduct").snapshots(),
+          builder: (context, snapshot) {
+
+            if(snapshot.connectionState==ConnectionState.waiting){
+              return  Center(child: CircularProgressIndicator());
+            }
+
+            if(snapshot.hasData){
+              var dataLength=snapshot.data!.docs.length;
+              return dataLength !=0? ListView.builder(itemCount: dataLength,
+              itemBuilder: (context,index){
+         String PostName = snapshot.data?.docs[index]["productName"];
+
+         return ListTile(
+           title: Text(PostName),
+           subtitle: Column(
+             children: [
+               Text(PostName),
+             ],
+           ),
+         );
+              },) : Center(child: Text("Nothing to Show"),);
+            }
+
+            if(snapshot.hasError){
+              return Center(child: Icon(Icons.error,color: Colors.red));
+            }
+
+            return Container();
+          },) ,
 
       floatingActionButton: FloatingActionButton(onPressed: (){
         showModalBottomSheet(
