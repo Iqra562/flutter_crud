@@ -18,15 +18,14 @@ class _ProductScreenState extends State<ProductScreen> {
 
   void addProduct()async{
 
-   // String productId = Uuid().v1();
+   String productId = Uuid().v1();
 
     try{
-      await FirebaseFirestore.instance.collection("addProduct").add({
+    //  await FirebaseFirestore.instance.collection("addProduct").add({
 
-     // await FirebaseFirestore.instance.collection("Product").doc(productId).set({
-       // "productID" : productId,
+     await FirebaseFirestore.instance.collection("Product").doc(productId).set({
+        "productID" : productId,
         "productName" : productName.text,
-        "productPrice" : productPrice.text,
         "productCate" : defaultCategories
       });
       Navigator.pop(context); // Bottom Sheet
@@ -51,14 +50,101 @@ class _ProductScreenState extends State<ProductScreen> {
               var dataLength=snapshot.data!.docs.length;
               return dataLength !=0? ListView.builder(itemCount: dataLength,
               itemBuilder: (context,index){
+        String PostId=snapshot.data?.docs[index]["productID"];
          String PostName = snapshot.data?.docs[index]["productName"];
 
          return ListTile(
            title: Text(PostName),
+
+
            subtitle: Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
              children: [
                Text(PostName),
              ],
+           ),
+           leading: CircleAvatar(backgroundColor: Colors.blue,),
+           trailing: SizedBox(
+             width: 100,
+             child: Row(
+               mainAxisAlignment: MainAxisAlignment.end,
+               children: [
+                 IconButton(onPressed: (){
+                   showModalBottomSheet(
+
+
+                     context: context, builder: (context) {
+                     return StatefulBuilder(builder: (context, setState) {
+                       return Container(
+                         margin: const EdgeInsets.symmetric(horizontal: 20),
+                         child: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+
+                             TextFormField(
+                               controller: productName,
+                               validator: (value){
+                                 if( value == " "  || value!=null ){
+                                   return "Fill the Field";
+                                 }
+                               },
+                               decoration: InputDecoration(
+                                   hintText: "Enter Product Name"
+                               ),
+                             ),
+
+                             SizedBox(
+                               height: 20,
+                             ),
+
+                             TextFormField(
+                               controller: productPrice,
+                               validator: (value){
+                                 if( value == " "  || value!=null ){
+                                   return "fill this field";
+                                 }
+                               },
+                               decoration: InputDecoration(
+                                   hintText: "enter product price"
+                               ),
+                             ),
+
+                             SizedBox(
+                               height: 10,
+                             ),
+
+                             DropdownButton(
+                                 value: defaultCategories,
+                                 items: categories.map((value) {
+                                   return DropdownMenuItem(
+                                     child: new Text(value),
+                                     value: value,
+                                   );
+                                 }).toList(),
+                                 onChanged: (val){
+                                   setState((){
+                                     defaultCategories=val;
+                                   });
+                                   // debugPrint(defaulVal);
+                                 }),
+
+                             ElevatedButton(onPressed: (){
+                               addProduct();
+                             }, child: Text("add product"))
+
+                           ],
+                         ),
+                       );
+                     },);
+                   },);
+
+                 }, icon: Icon(Icons.edit)),
+                 IconButton(onPressed: (){
+                   //FirebaseFirestore.instance.collection("addProduct").doc(PostId).delete();
+                 }
+         , icon: Icon(Icons.delete_outline_outlined))
+               ],
+             ),
            ),
          );
               },) : Center(child: Text("Nothing to Show"),);
