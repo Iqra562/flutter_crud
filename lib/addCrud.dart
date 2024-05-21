@@ -1,12 +1,15 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:image_picker/image_picker.dart';
 class ProductScreen extends StatefulWidget {
   const ProductScreen({super.key});
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
+
 }
 
 class _ProductScreenState extends State<ProductScreen> {
@@ -18,14 +21,15 @@ class _ProductScreenState extends State<ProductScreen> {
 
   void addProduct()async{
 
-   String productId = Uuid().v1();
+   String productID = Uuid().v1();
 
     try{
     //  await FirebaseFirestore.instance.collection("addProduct").add({
 
-     await FirebaseFirestore.instance.collection("Product").doc(productId).set({
-        "productID" : productId,
+     await FirebaseFirestore.instance.collection("Product").doc(productID).set({
+        "productId" : productID,
         "productName" : productName.text,
+       "productPrice" : productPrice.text,
         "productCate" : defaultCategories
       });
       Navigator.pop(context); // Bottom Sheet
@@ -35,11 +39,29 @@ class _ProductScreenState extends State<ProductScreen> {
     }
   }
 
+  void updateProduct(productId)async{
+
+    try{
+
+
+      await FirebaseFirestore.instance.collection("Product").doc(productId).update({
+        "productName" : productName.text,
+        "productPrice" : productPrice.text,
+        "productCate" : defaultCategories
+      });
+      Navigator.pop(context); // Bottom Sheet
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("product updated"))); // stf
+    } catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+  File? userImage;
+  Uint8List webImage= Uint8List(8);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection("addProduct").snapshots(),
+          stream: FirebaseFirestore.instance.collection("Product").snapshots(),
           builder: (context, snapshot) {
 
             if(snapshot.connectionState==ConnectionState.waiting){
@@ -50,17 +72,17 @@ class _ProductScreenState extends State<ProductScreen> {
               var dataLength=snapshot.data!.docs.length;
               return dataLength !=0? ListView.builder(itemCount: dataLength,
               itemBuilder: (context,index){
-        String PostId=snapshot.data?.docs[index]["productID"];
-         String PostName = snapshot.data?.docs[index]["productName"];
+        String ProductId=snapshot.data?.docs[index]["productId"];
+         String ProductName = snapshot.data?.docs[index]["productName"];
 
          return ListTile(
-           title: Text(PostName),
+           title: Text(ProductName),
 
 
            subtitle: Column(
              crossAxisAlignment: CrossAxisAlignment.start,
              children: [
-               Text(PostName),
+               Text(ProductName),
              ],
            ),
            leading: CircleAvatar(backgroundColor: Colors.blue,),
@@ -129,8 +151,8 @@ class _ProductScreenState extends State<ProductScreen> {
                                  }),
 
                              ElevatedButton(onPressed: (){
-                               addProduct();
-                             }, child: Text("add product"))
+                               updateProduct(ProductId);
+                             }, child: Text("update product"))
 
                            ],
                          ),
@@ -140,7 +162,7 @@ class _ProductScreenState extends State<ProductScreen> {
 
                  }, icon: Icon(Icons.edit)),
                  IconButton(onPressed: (){
-                   //FirebaseFirestore.instance.collection("addProduct").doc(PostId).delete();
+                   FirebaseFirestore.instance.collection("Product").doc(ProductId).delete();
                  }
          , icon: Icon(Icons.delete_outline_outlined))
                ],
@@ -199,6 +221,38 @@ class _ProductScreenState extends State<ProductScreen> {
 
                   SizedBox(
                     height: 10,
+                  ),
+                  GestureDetector(
+                    onTap: ()async{
+                      XFile? pickImage=await ImagePicker().pickImage(source:ImageSource.gallery);
+                      if(kIsWeb){
+if(pickImage!=null){
+  var convertedFile= await pickImage.readAsBytes();
+  setState(
+      (){
+        webImage=convertedFile;
+      });
+
+}
+                      }
+                      else{
+                        if(pickImage!=null){
+File convertedFile=File(pickImage.path);
+setState((){
+  userImage=convertedFile;
+});
+
+                        }
+                      }
+                    },
+                    child: kIsWeb?CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey,
+                      backgroundImage: webImage != null ? MemoryImage(webImage):null,
+                    ):CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.grey,
+                    )
                   ),
 
                   DropdownButton(
