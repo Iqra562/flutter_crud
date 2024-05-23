@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
@@ -19,18 +20,34 @@ class _ProductScreenState extends State<ProductScreen> {
   List categories = ["Cat", "CAt1", "cat2"];
   dynamic defaultCategories = "Cat";
 
-  void addProduct()async{
+  void addProductWithImage()async{
+    String ProductId= Uuid().v1();
+    if(kIsWeb){
+      UploadTask  uploadTask =FirebaseStorage.instance.ref().child("productImage").child(ProductId).putData(webImage);
+      TaskSnapshot taskSnapshot =await uploadTask ;
+      String productImageURL=await taskSnapshot.ref.getDownloadURL();
+addProduct(ProductId,productImageURL);
 
-   String productID = Uuid().v1();
+    }else{
+      UploadTask  uploadTask =FirebaseStorage.instance.ref().child("productImage").child(ProductId).putFile(userImage!);
+      TaskSnapshot taskSnapshot =await uploadTask ;
+      String productImageURL=await taskSnapshot.ref.getDownloadURL();
+      addProduct(ProductId,productImageURL);
+    }
+  }
+
+
+  void addProduct(String productId, String imgUrl)async{
 
     try{
     //  await FirebaseFirestore.instance.collection("addProduct").add({
 
-     await FirebaseFirestore.instance.collection("Product").doc(productID).set({
-        "productId" : productID,
+     await FirebaseFirestore.instance.collection("Product").doc(productId).set({
+        "productId" : productId,
         "productName" : productName.text,
-       "productPrice" : productPrice.text,
-        "productCate" : defaultCategories
+        "productPrice" : productPrice.text,
+        "productCate" : defaultCategories,
+        "image":imgUrl,
       });
       Navigator.pop(context); // Bottom Sheet
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("product added"))); // stf
@@ -271,7 +288,7 @@ setState((){
                   }),
 
                   ElevatedButton(onPressed: (){
-                    addProduct();
+                    addProductWithImage();
                   }, child: Text("add product"))
 
                 ],
